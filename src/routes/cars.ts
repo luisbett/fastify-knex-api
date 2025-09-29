@@ -2,9 +2,15 @@ import type { FastifyInstance } from "fastify"
 import { knex } from "../database.js"
 import { z } from 'zod'
 import { randomUUID } from "node:crypto"
+import { checkAccessToken } from "../middlewares/check-access-token.js"
 
 export async function carsRoutes(app: FastifyInstance) {
-  app.get('/', async () => {
+  // I can create a global preHandler for all routes inside this file doing the below
+  // app.addHook('preHandler', checkAccessToken)
+
+  app.get('/', {
+    preHandler: [checkAccessToken]
+  }, async () => {
     const cars = await knex('cars').select()
 
     return {
@@ -12,7 +18,9 @@ export async function carsRoutes(app: FastifyInstance) {
     }
   })
 
-  app.get('/:id', async (request) => {
+  app.get('/:id', {
+    preHandler: [checkAccessToken]
+  }, async (request) => {
     const getCarsParamsSchema = z.object({
       id: z.uuid()
     })
@@ -26,8 +34,10 @@ export async function carsRoutes(app: FastifyInstance) {
     }
   })
 
-  app.post('/', async (request, reply) => {
-    const createCardBodySchema = z.object({
+  app.post('/', {
+    preHandler: [checkAccessToken]
+  }, async (request, reply) => {
+    const createCarBodySchema = z.object({
       make: z.string(),
       model: z.string(),
       year: z.number().nullable(),
@@ -35,15 +45,15 @@ export async function carsRoutes(app: FastifyInstance) {
       price: z.number()
     })
 
-    const { make, model, year, color, price } = createCardBodySchema.parse(request.body)
+    const { make, model, year, color, price } = createCarBodySchema.parse(request.body)
 
     await knex('cars')
       .insert({
         id: randomUUID(),
         make,
         model,
-        year,
-        color,
+        year: year || null,
+        color: color || null,
         price
       })
 
