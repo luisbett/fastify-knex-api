@@ -1,5 +1,12 @@
-import 'dotenv/config'
+import { config } from 'dotenv'
 import { z }  from 'zod'
+
+// Variable NODE_ENV is set automatically when running tests through Vitest
+if(process.env.NODE_ENV === 'test') {
+  config({ path: '.env.test'})
+} else {
+  config()
+}
 
 const envSchema = z.object({
   DATABASE_URL: z.string(),
